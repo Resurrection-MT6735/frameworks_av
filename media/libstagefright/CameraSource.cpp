@@ -44,6 +44,10 @@
 #define UNUSED_UNLESS_VERBOSE(x)
 #endif
 
+#ifdef MTK_HARDWARE
+#define OMX_MTK_COLOR_FormatYV12 0x7F000200
+#endif
+
 namespace android {
 
 static const int64_t CAMERA_SOURCE_TIMEOUT_NS = 3000000000LL;
@@ -119,7 +123,11 @@ static int32_t getColorFormat(const char* colorFormat) {
     }
 
     if (!strcmp(colorFormat, CameraParameters::PIXEL_FORMAT_YUV420P)) {
+#ifdef	MTK_HARDWARE
+       return OMX_MTK_COLOR_FormatYV12;
+#else
        return OMX_COLOR_FormatYUV420Planar;
+#endif
     }
 
     if (!strcmp(colorFormat, CameraParameters::PIXEL_FORMAT_YUV422SP)) {
@@ -757,16 +765,6 @@ status_t CameraSource::startCameraRecording() {
                 ALOGW("Failed to set video buffer count to %d due to %d",
                     mNumInputBuffers, err);
             }
-        }
-
-        err = mCamera->sendCommand(
-            CAMERA_CMD_SET_VIDEO_FORMAT, mEncoderFormat, mEncoderDataSpace);
-
-        // This could happen for CameraHAL1 clients; thus the failure is
-        // not a fatal error
-        if (err != OK) {
-            ALOGW("Failed to set video encoder format/dataspace to %d, %d due to %d",
-                    mEncoderFormat, mEncoderDataSpace, err);
         }
 
         // Create memory heap to store buffers as VideoNativeMetadata.
